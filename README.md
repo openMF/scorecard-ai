@@ -82,8 +82,8 @@ Check out the live demo here: [Scorecard-AI Live](https://parthkl-scorecard.hf.s
 
 ## Future Enhancements 🌱
 
-- Expand the range of models available for prediction.
-- Add more pre-defined feature values for different user scenarios.
+- Explore the other pre-processing techniques and models.
+- Explore other featureas we can look to predict.
 - Improve UI/UX for an even smoother experience.
   
 ## Contributing 🤝
