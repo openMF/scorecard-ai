@@ -44,20 +44,24 @@ Check out the live demo here: [Scorecard-AI Live](https://parthkl-scorecard.hf.s
     ```bash
     git clone https://github.com/yourusername/scorecard-ai.git
     ```
-    
-2. **Install Dependencies**:
+2. **Navigate to the Web Folder:**:
+    After cloning the repository, change the directory to the Web folder:
+    ```bash
+    cd scorecard-ai/Web
+    ```
+3. **Install Dependencies**:
     Install the required Python packages by running:
     ```bash
     pip install -r requirements.txt
     ```
 
-3. **Run Locally**:
+4. **Run Locally**:
     You can run the Django application locally by navigating to the `Web` folder and running the following:
     ```bash
     python manage.py runserver
     ```
 
-4. **Predict Interest Rates**:
+5. **Predict Interest Rates**:
     - Select features via the frontend.
     - Choose the model you'd like to use for prediction.
     - Input values or allow the system to use average values where data is missing.
