@@ -1,0 +1,237 @@
+/* Reset some default browser styles */
+* {
+	margin: 0;
+	padding: 0;
+	/* box-sizing: border-box; */
+}
+
+:root {
+	--black: #1d1d1d;
+	--background: #262a38;
+	--primary: hsl(229, 100%, 71%);
+	--formbg: rgba(0, 0, 0, 0.2);
+}
+
+body,
+html {
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	font-family: Arial, sans-serif;
+	color: #fff;
+	background: var(--background);
+}
+
+.main-wrapper {
+	/* margin-top: 2%; */
+	padding-top: 2%;
+	margin-left: 2%;
+	margin-right: 2%;
+}
+
+.header {
+	text-align: center;
+}
+
+/* Styling for the entire container holding both sections */
+.container {
+	display: flex;
+	height: 80vh;
+	color: #333;
+	/* background-color: #f4f4f4; */
+	padding: 20px;
+}
+
+.container > form {
+	display: flex;
+}
+
+/* Left section styles */
+.left-section {
+	padding: 25px;
+	background: var(--formbg);
+	border-radius: 20px 0px 0px 20px;
+	color: white;
+	/* background-color: #fff; */
+	/* border-right: 2px solid #ccc; */
+}
+.right-section {
+	background: rgba(0, 0, 0, 0.2);
+	border-radius: 0 20px 20px 0;
+}
+
+select > option {
+	background: transparent;
+	color: black;
+	/* Remove default arrow */
+	/* Add custom arrow */
+}
+
+.fill-random-btn {
+	background: transparent;
+	border: 1px solid var(--primary);
+}
+
+.model-selection select,
+.remove-btn,
+.submit-btn {
+	padding: 10px;
+	margin-top: 5px;
+	border-radius: 5px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	transition: background-color 0.3s ease;
+}
+
+.model-selection select,
+.feature-set-selection > select {
+	background: transparent;
+	color: white;
+	border: 2px solid var(--primary);
+}
+.feature-set-selection > select {
+	padding: 7px 10px;
+}
+
+.feature-input input[type="text"] {
+	flex-grow: 1;
+	padding: 8px;
+	border: 1px solid #ccc;
+	border-radius: 3px;
+	max-width: 150px; /* Limit the width of the text field */
+}
+.select-all {
+	margin-bottom: 10px; /* Add some spacing below the "Select All" checkbox */
+}
+
+.select-all label {
+	background-color: transparent; /* Remove blue background */
+	color: inherit; /* Inherit color from parent */
+	border: none; /* Remove border */
+	padding: 0; /* Remove padding */
+}
+.model-selection select {
+	padding: 8px;
+	margin-bottom: 10px;
+	border-radius: 4px;
+}
+
+/* Features styling to have a button boundary */
+.features label,
+.standard-input {
+	display: inline-block; /* Make feature buttons inline-block */
+	margin: 5px; /* Reduce margin between buttons */
+	padding: 8px 10px; /* Reduce padding */
+	font-size: 14px; /* Reduce font size */
+
+	color: white;
+	border-radius: 5px;
+	cursor: pointer;
+	border: 2px solid var(--primary);
+}
+
+.features input[type="checkbox"] {
+	margin-right: 10px;
+}
+
+/* Right section styles */
+.right-section {
+	width: 60%;
+	padding: 20px;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	flex-wrap: wrap; /* Allow feature inputs to wrap to the next line */
+}
+
+.feature-input {
+	margin-bottom: 15px;
+}
+
+.feature-input label {
+	display: block;
+	font-weight: bold;
+	margin-bottom: 5px;
+}
+
+.feature-input input[type="text"] {
+	width: 100%;
+	padding: 8px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+}
+
+.submit-btn {
+	background-color: var(--primary);
+	color: white;
+	padding: 8px 15px; /* Reduce padding */
+	font-size: 16px;
+	border: none;
+	border-radius: 5px;
+	cursor: pointer;
+	width: auto; /* Reset width to auto */
+	box-shadow: 0 4px 8px rgba(0, 123, 255, 0.2);
+	transition: background-color 0.3s;
+	margin-top: auto; /* This ensures the button is at the bottom */
+}
+
+.features label:hover,
+.remove-btn:hover,
+.submit-btn:hover {
+	transform: scaleX(1.1);
+	transition: all 300ms ease-in-out;
+}
+
+.features label:active,
+.remove-btn:active,
+.submit-btn:active {
+	background-color: #e6c4ad; /* Light blue when clicked */
+	box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1); /* Inset shadow when clicked */
+}
+
+.prediction-result {
+	padding: 10px;
+	background-color: #e2e2e2;
+	border-left: 5px solid #007bff;
+	margin-top: 20px;
+	font-size: 18px;
+}
+
+.loading {
+	display: none; /* Initially hidden */
+	text-align: center;
+	margin-top: 20px;
+}
+
+.loading.active {
+	display: block; /* Show when active */
+}
+
+.loading .spinner {
+	border: 4px solid rgba(0, 0, 0, 0.1);
+	border-top: 4px solid #007bff; /* Blue */
+	border-radius: 50%;
+	width: 30px;
+	height: 30px;
+	animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+	0% {
+		transform: rotate(0deg);
+	}
+	100% {
+		transform: rotate(360deg);
+	}
+}
+
+.selected-features {
+	display: flex;
+	flex-wrap: wrap; /* Allow columns to wrap to the next line */
+	justify-content: space-between;
+}
+
+.selected-features .column {
+	flex: 0 0 calc(50% - 10px); /* Each column takes 50% width with some margin */
+	margin-bottom: 10px;
+}

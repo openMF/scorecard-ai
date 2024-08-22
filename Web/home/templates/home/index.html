@@ -1,0 +1,316 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/static/css/styles.css?{% now "U" %}"/>
+    <title>Fineract X Scorecard</title>
+    <style>
+        /* Styling remains the same as your original */
+        .container {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            margin: 20px;
+        }
+        .container > form{
+            display: flex;
+        }
+        .feature-input {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .feature-input label {
+            flex: 1;
+            margin-right: 10px;
+        }
+        .feature-input input[type="text"] {
+            flex: 2;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .remove-btn {
+            margin-left: 10px;
+            padding: 5px 10px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .remove-btn:hover {
+            background-color: #c0392b;
+        }
+        .submit-btn, .fill-random-btn {
+            padding: 10px 20px;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .fill-random-btn{
+            margin-top: 0px;
+        }
+        .prediction-result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #ecf0f1;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+        }
+        .loading {
+            display: none;
+            margin-top: 20px;
+        }
+        .loading .spinner {
+            width: 30px;
+            height: 30px;
+            border: 4px solid #ccc;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-wrapper">
+        <div class="header">
+            <h1>Fineract X Scorecard</h1>
+            <h2>ML Prediction</h2>
+        </div>
+        <div class="container">
+            <!-- Use the correct URL view name for form submission -->
+            <form method="POST" action="{% url 'index' %}" id="feature-form">
+                {% csrf_token %}
+                <div class="left-section">
+                    <div style="display: flex; align-items: center; gap: 40px; margin-bottom: 20px;">
+                        <div class="feature-set-selection">
+                            <label for="feature_set">Predict:</label>
+                            <select id="feature_set" name="feature_set" onchange="this.form.submit()">
+                                <option value="F1" {% if selected_feature_set == 'F1' %}selected{% endif %}>F1</option>
+                                <option value="F2" {% if selected_feature_set == 'F2' %}selected{% endif %}>F2</option>
+                            </select>
+                            <input type="hidden" name="action" value="select">
+                        </div>
+                        <div class="model-selection">
+                            <label for="model">Select Model:</label>
+                            <select id="model" name="model">
+                                <option value="">Select a model</option>
+                                {% for model in models %}
+                                <option value="{{ model }}">{{ model }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="button" onclick="fillSpecificValues()" class="fill-random-btn">Fill with Specific Values</button>
+                    </div>
+                    <div class="select-all">
+                        <label>
+                            <input type="checkbox" id="select-all"> Select All
+                        </label>
+                    </div>
+                    <div class="features">
+                        {% for feature in all_features %}
+                        <label>
+                            <input type="checkbox" name="selected_features" value="{{ feature }}" {% if feature in selected_features %}checked{% endif %}>
+                            {{ feature }}
+                        </label>
+                        {% endfor %}
+                    </div>
+                    <div class="selected-features" id="selected-features-container">
+                        <div class="column" id="column1"></div>
+                        <div class="column" id="column2"></div>
+                    </div>
+                </div>
+                <div class="right-section">
+                    <button type="submit" name="action" value="submit" class="submit-btn">Submit</button>
+                    {% if prediction_result %}
+                    <div class="prediction-result">
+                        <p>Prediction: {{ prediction_result }}</p>
+                    </div>
+                    {% endif %}
+                    <div class="loading" id="loading-indicator">
+                        <div class="spinner"></div>
+                        <p>Estimated time: 1 min</p>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script>
+        const featureForm = document.getElementById('feature-form');
+        const selectedFeaturesContainer = document.getElementById('selected-features-container');
+        const column1 = document.getElementById('column1');
+        const column2 = document.getElementById('column2');
+        const selectAllCheckbox = document.getElementById('select-all');
+        const featureCheckboxes = document.querySelectorAll('input[type="checkbox"][name="selected_features"]');
+
+        featureForm.addEventListener('change', (event) => {
+            if (event.target.type === 'checkbox' && event.target.name === 'selected_features') {
+                const feature = event.target.value;
+                if (event.target.checked) {
+                    addFeatureInput(feature);
+                } else {
+                    removeFeatureInput(feature);
+                }
+                updateSelectAllCheckbox();
+            }
+        });
+
+        selectedFeaturesContainer.addEventListener('click', (event) => {
+            if (event.target.classList.contains('remove-btn')) {
+                const featureInput = event.target.closest('.feature-input');
+                const feature = featureInput.dataset.feature;
+                removeFeatureInput(feature);
+                uncheckFeatureCheckbox(feature);
+                updateSelectAllCheckbox();
+            }
+        });
+
+        selectAllCheckbox.addEventListener('change', () => {
+            const isChecked = selectAllCheckbox.checked;
+            featureCheckboxes.forEach(checkbox => {
+                checkbox.checked = isChecked;
+                if (isChecked) {
+                    addFeatureInput(checkbox.value);
+                } else {
+                    removeFeatureInput(checkbox.value);
+                }
+            });
+        });
+
+        function naturalSorter(as, bs) {
+            let a, b, a1, b1, i = 0, n, L,
+            rx = /(\d+)|(\D+)/g, rd = /\d/;
+            if (isFinite(as) && isFinite(bs)) return as - bs;
+            a = String(as).toLowerCase();
+            b = String(bs).toLowerCase();
+            if (a === b) return 0;
+            while ((a1 = a.match(rx)) && (b1 = b.match(rx))) {
+                if ((a1 = a1[i]) === (b1 = b1[i])) {
+                    i++;
+                    continue;
+                }
+                n = rd.test(a1) && rd.test(b1) ? a1 - b1 : a1 > b1 ? 1 : -1;
+                return n;
+            }
+            return a > b ? 1 : -1;
+        }
+
+        function addFeatureInput(feature) {
+            if (selectedFeaturesContainer.querySelector(`.feature-input[data-feature="${feature}"]`)) {
+                return;
+            }
+
+            const featureInput = document.createElement('div');
+            featureInput.className = 'feature-input';
+            featureInput.dataset.feature = feature;
+            featureInput.innerHTML = `
+                <label for="${feature}-input">${feature}</label>
+                <input type="text" id="${feature}-input" name="${feature}">
+                <button type="button" class="remove-btn">Remove</button>
+            `;
+
+            const columnToAddTo = column1.children.length <= column2.children.length ? column1 : column2;
+            columnToAddTo.appendChild(featureInput);
+
+            sortFeatureInputs(column1);
+            sortFeatureInputs(column2);
+        }
+
+        function removeFeatureInput(feature) {
+            const featureInput = selectedFeaturesContainer.querySelector(`.feature-input[data-feature="${feature}"]`);
+            if (featureInput) {
+                featureInput.remove();
+            }
+        }
+
+        function uncheckFeatureCheckbox(feature) {
+            const checkbox = featureForm.querySelector(`input[type="checkbox"][value="${feature}"]`);
+            if (checkbox) {
+                checkbox.checked = false;
+            }
+        }
+
+        function sortFeatureInputs(column) {
+            const inputs = Array.from(column.children);
+            inputs.sort((a, b) => naturalSorter(a.dataset.feature, b.dataset.feature));
+            column.innerHTML = '';
+            inputs.forEach(input => column.appendChild(input));
+        }
+
+        function updateSelectAllCheckbox() {
+            const allChecked = Array.from(featureCheckboxes).every(checkbox => checkbox.checked);
+            selectAllCheckbox.checked = allChecked;
+        }
+
+        function fillSpecificValues() {
+            const selectedFeatureSet = document.getElementById('feature_set').value;
+
+            const specificValuesF1 = {
+                'activation_date': 35306.570183,
+                'gender_cv_id': 2719.321740,
+                'date_of_birth': 18133.860361,
+                'legal_form_enum': 1.003603,
+                'principal_amount': 15586.604141,
+                'interest_period_frequency_enum': 2.509243,
+                'interest_method_enum': 0.970859,
+                'interest_calculated_in_period_enum': 0.029141,
+                'approvedon_date': 35274.502584,
+                'expected_disbursedon_date': 35274.502589,
+                'disbursedon_date': 35274.539349,
+                'expected_maturedon_date': 35957.505120,
+                'maturedon_date': 35784.309945,
+                'transaction_type_enum': 1.763809,
+                'transaction_date': 35519.251317,
+                'amount': 4381.822410,
+                'submitted_on_date': 36389.967922
+            };
+
+            const specificValuesF2 = {
+                'activation_date': 35207.0,
+                'gender_cv_id': 16.0,
+                'date_of_birth': 18423.0,
+                'validatedon_date': 35207.0,
+                'legal_form_enum': 1.0,
+                'principal_amount': 10000.0,
+                'nominal_interest_rate_per_period': 0.0,
+                'interest_period_frequency_enum': 2.0,
+                'annual_nominal_interest_rate': 0.0,
+                'interest_method_enum': 1.0,
+                'interest_calculated_in_period_enum': 0.0,
+                'term_frequency': 10.0,
+                'number_of_repayments': 10.0,
+                'approvedon_date': 36038.0,
+                'expected_disbursedon_date': 36038.0,
+                'disbursedon_date': 36038.0,
+                'expected_maturedon_date': 36342.0,
+                'maturedon_date': 36342.0,
+                'transaction_type_enum': 2.0,
+                'transaction_date': 36201.0,
+                'amount': 1000.0,
+                'submitted_on_date': 36370.0,
+                'created_date': 36370.0
+            };
+
+            const specificValues = selectedFeatureSet === 'F1' ? specificValuesF1 : specificValuesF2;
+
+            const inputs = document.querySelectorAll('.feature-input input[type="text"]');
+            inputs.forEach(input => {
+                const featureName = input.name;
+                if (specificValues.hasOwnProperty(featureName)) {
+                    input.value = specificValues[featureName];
+                }
+            });
+        }
+
+        updateSelectAllCheckbox();
+    </script>
+    </div>
+</body>
+</html>
