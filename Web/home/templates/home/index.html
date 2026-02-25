@@ -1,3 +1,10 @@
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at https://mozilla.org/MPL/2.0/.
+   -
+   - AI-Assisted Development Notice:
+   - Portions of this file were developed with the assistance of GitHub Copilot.
+   - All AI-generated code was reviewed, tested, and validated by the contributor. -->
 {% load static %}
 <!DOCTYPE html>
 <html lang="en">
@@ -6,7 +13,6 @@
     <link rel="stylesheet" href="/static/css/styles.css?{% now "U" %}"/>
     <title>Fineract X Scorecard</title>
     <style>
-        /* Styling remains the same as your original */
         .container {
             display: flex;
             flex-direction: row;
@@ -25,11 +31,19 @@
             flex: 1;
             margin-right: 10px;
         }
-        .feature-input input[type="text"] {
+        .feature-input input[type="text"],
+        .feature-input input[type="number"],
+        .feature-input input[type="date"] {
             flex: 2;
             padding: 5px;
             border: 1px solid #ccc;
             border-radius: 4px;
+            background-color: #1e2233;
+            color: #fff;
+        }
+        .feature-input input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
         }
         .remove-btn {
             margin-left: 10px;
@@ -56,9 +70,23 @@
         .prediction-result {
             margin-top: 20px;
             padding: 10px;
-            background-color: #ecf0f1;
-            border: 1px solid #bdc3c7;
+            background-color: #1a3a2a;
+            border: 1px solid #2ecc71;
             border-radius: 4px;
+            color: #2ecc71;
+        }
+        .error-message {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #3a1a1a;
+            border: 1px solid #e74c3c;
+            border-radius: 4px;
+            color: #e74c3c;
+        }
+        .feature-hint {
+            font-size: 0.75em;
+            color: #888;
+            margin-left: 5px;
         }
         .loading {
             display: none;
@@ -85,7 +113,6 @@
             <h2>ML Prediction</h2>
         </div>
         <div class="container">
-            <!-- Use the correct URL view name for form submission -->
             <form method="POST" action="{% url 'index' %}" id="feature-form">
                 {% csrf_token %}
                 <div class="left-section">
@@ -117,8 +144,13 @@
                     <div class="features">
                         {% for feature in all_features %}
                         <label>
-                            <input type="checkbox" name="selected_features" value="{{ feature }}" {% if feature in selected_features %}checked{% endif %}>
+                            <input type="checkbox" name="selected_features" value="{{ feature }}"
+                                   data-is-date="{% if feature in date_features %}true{% else %}false{% endif %}"
+                                   {% if feature in selected_features %}checked{% endif %}>
                             {{ feature }}
+                            {% if feature in date_features %}
+                            <span class="feature-hint">(date)</span>
+                            {% endif %}
                         </label>
                         {% endfor %}
                     </div>
@@ -129,9 +161,14 @@
                 </div>
                 <div class="right-section">
                     <button type="submit" name="action" value="submit" class="submit-btn">Submit</button>
+                    {% if error_message %}
+                    <div class="error-message">
+                        <p>⚠ {{ error_message }}</p>
+                    </div>
+                    {% endif %}
                     {% if prediction_result %}
                     <div class="prediction-result">
-                        <p>Prediction: {{ prediction_result }}</p>
+                        <p>✓ Prediction: {{ prediction_result }}</p>
                     </div>
                     {% endif %}
                     <div class="loading" id="loading-indicator">
@@ -143,6 +180,11 @@
         </div>
     </div>
     <script>
+        // Date features list passed from Django context.
+        const DATE_FEATURES = new Set([
+            {% for feat in date_features %}"{{ feat }}",{% endfor %}
+        ]);
+
         const featureForm = document.getElementById('feature-form');
         const selectedFeaturesContainer = document.getElementById('selected-features-container');
         const column1 = document.getElementById('column1');
@@ -207,12 +249,19 @@
                 return;
             }
 
+            const isDate = DATE_FEATURES.has(feature);
+            const inputType = isDate ? 'date' : 'number';
+            const placeholder = isDate ? '' : 'Enter a number';
+            const step = isDate ? '' : 'step="any"';
+            const hint = isDate ? '<span class="feature-hint">YYYY-MM-DD or numeric days</span>' : '';
+
             const featureInput = document.createElement('div');
             featureInput.className = 'feature-input';
             featureInput.dataset.feature = feature;
             featureInput.innerHTML = `
-                <label for="${feature}-input">${feature}</label>
-                <input type="text" id="${feature}-input" name="${feature}">
+                <label for="${feature}-input">${feature} ${hint}</label>
+                <input type="${inputType}" id="${feature}-input" name="${feature}"
+                       placeholder="${placeholder}" ${step}>
                 <button type="button" class="remove-btn">Remove</button>
             `;
 
@@ -253,55 +302,56 @@
             const selectedFeatureSet = document.getElementById('feature_set').value;
 
             const specificValuesF1 = {
-                'activation_date': 35306.570183,
-                'gender_cv_id': 2719.321740,
-                'date_of_birth': 18133.860361,
-                'legal_form_enum': 1.003603,
-                'principal_amount': 15586.604141,
-                'interest_period_frequency_enum': 2.509243,
-                'interest_method_enum': 0.970859,
-                'interest_calculated_in_period_enum': 0.029141,
-                'approvedon_date': 35274.502584,
-                'expected_disbursedon_date': 35274.502589,
-                'disbursedon_date': 35274.539349,
-                'expected_maturedon_date': 35957.505120,
-                'maturedon_date': 35784.309945,
-                'transaction_type_enum': 1.763809,
-                'transaction_date': 35519.251317,
-                'amount': 4381.822410,
-                'submitted_on_date': 36389.967922
+                'activation_date': '2020-09-01',
+                'gender_cv_id': 2719,
+                'date_of_birth': '1973-09-01',
+                'legal_form_enum': 1,
+                'principal_amount': 15586.60,
+                'interest_period_frequency_enum': 2,
+                'interest_method_enum': 1,
+                'interest_calculated_in_period_enum': 0,
+                'approvedon_date': '2020-08-01',
+                'expected_disbursedon_date': '2020-08-01',
+                'disbursedon_date': '2020-08-02',
+                'expected_maturedon_date': '2022-07-01',
+                'maturedon_date': '2022-02-15',
+                'transaction_type_enum': 2,
+                'transaction_date': '2021-04-15',
+                'amount': 4381.82,
+                'submitted_on_date': '2023-08-15'
             };
 
             const specificValuesF2 = {
-                'activation_date': 35207.0,
-                'gender_cv_id': 16.0,
-                'date_of_birth': 18423.0,
-                'validatedon_date': 35207.0,
-                'legal_form_enum': 1.0,
-                'principal_amount': 10000.0,
-                'nominal_interest_rate_per_period': 0.0,
-                'interest_period_frequency_enum': 2.0,
-                'annual_nominal_interest_rate': 0.0,
-                'interest_method_enum': 1.0,
-                'interest_calculated_in_period_enum': 0.0,
-                'term_frequency': 10.0,
-                'number_of_repayments': 10.0,
-                'approvedon_date': 36038.0,
-                'expected_disbursedon_date': 36038.0,
-                'disbursedon_date': 36038.0,
-                'expected_maturedon_date': 36342.0,
-                'maturedon_date': 36342.0,
-                'transaction_type_enum': 2.0,
-                'transaction_date': 36201.0,
-                'amount': 1000.0,
-                'submitted_on_date': 36370.0,
-                'created_date': 36370.0
+                'activation_date': '2020-06-01',
+                'gender_cv_id': 16,
+                'date_of_birth': '1974-06-15',
+                'validatedon_date': '2020-06-01',
+                'legal_form_enum': 1,
+                'principal_amount': 10000,
+                'nominal_interest_rate_per_period': 0,
+                'interest_period_frequency_enum': 2,
+                'annual_nominal_interest_rate': 0,
+                'interest_method_enum': 1,
+                'interest_calculated_in_period_enum': 0,
+                'term_frequency': 10,
+                'number_of_repayments': 10,
+                'approvedon_date': '2022-09-01',
+                'expected_disbursedon_date': '2022-09-01',
+                'disbursedon_date': '2022-09-01',
+                'expected_maturedon_date': '2023-07-15',
+                'maturedon_date': '2023-07-15',
+                'transaction_type_enum': 2,
+                'transaction_date': '2023-02-01',
+                'amount': 1000,
+                'submitted_on_date': '2023-08-01',
+                'created_date': '2023-08-01'
             };
 
             const specificValues = selectedFeatureSet === 'F1' ? specificValuesF1 : specificValuesF2;
 
-            const inputs = document.querySelectorAll('.feature-input input[type="text"]');
+            const inputs = document.querySelectorAll('.feature-input input');
             inputs.forEach(input => {
+                if (input.type === 'button' || input.type === 'submit') return;
                 const featureName = input.name;
                 if (specificValues.hasOwnProperty(featureName)) {
                     input.value = specificValues[featureName];
