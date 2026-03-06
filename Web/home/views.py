@@ -1,9 +1,7 @@
-import joblib
 import os
 import pandas as pd
 from django.conf import settings
 from django.shortcuts import render, redirect
-import pickle
 import numpy as np
 from datetime import datetime
 
@@ -58,16 +56,23 @@ default_values_f2 = {
 }
 
 # Function to load models when needed
+
 def load_models():
-    model_f1_1 = pickle.load(open(os.path.join(settings.BASE_DIR, 'Nominal_models/linear_regression_model_new.pkl'), 'rb'))
-    model_f1_2 = pickle.load(open(os.path.join(settings.BASE_DIR, 'Nominal_models/decision_tree_regressor_model_new.pkl'), 'rb'))
-    model_f1_3 = pickle.load(open(os.path.join(settings.BASE_DIR, 'Nominal_models/random_forest_regressor_model_new.pkl'), 'rb'))
+    """
+    Retrieve ML models from singleton registry.
+    Models are loaded once at startup, not per request.
+    """
+    from home.apps import ModelRegistry
+    registry = ModelRegistry.get_instance()
+    return (
+        registry.get_model('model_f1_1'),
+        registry.get_model('model_f1_2'),
+        registry.get_model('model_f1_3'),
+        registry.get_model('model_f2_1'),
+        registry.get_model('model_f2_2'),
+        registry.get_model('model_f2_3'),
+    )
 
-    model_f2_1 = pickle.load(open(os.path.join(settings.BASE_DIR, 'Intrest_model/decision_tree_model.pkl'), 'rb'))
-    model_f2_2 = pickle.load(open(os.path.join(settings.BASE_DIR, 'Intrest_model/logistic_model.pkl'), 'rb'))
-    model_f2_3 = pickle.load(open(os.path.join(settings.BASE_DIR, 'Intrest_model/xgb_model.pkl'), 'rb'))
-
-    return model_f1_1, model_f1_2, model_f1_3, model_f2_1, model_f2_2, model_f2_3
 
 # Function to parse and convert date string to difference in days from reference_date
 def convert_date_string_to_difference(date_input):
