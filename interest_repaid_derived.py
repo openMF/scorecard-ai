@@ -53,6 +53,23 @@ def remove_columns_with_missing_values(df, missing_threshold=0):
         print(f"Columns removed due to missing values: {columns_to_remove}")
     return df.drop(columns=columns_to_remove)
 
+def impute_missing_values(df, categorical_columns, numerical_columns):
+
+    """
+    Impute missing values using appropriate strategies:
+    - mode() for categorical features (avoids invalid fractional values)
+    - median() for numerical features (robust to outliers)
+    """
+    for col in categorical_columns:
+        if col in df.columns:
+            df[col] = df[col].fillna(df[col].mode()[0])
+    
+    for col in numerical_columns:
+        if col in df.columns:
+            df[col] = df[col].fillna(df[col].median())
+    
+    return df
+
 def clean_data(filepath):
     df = load_data(filepath)
     
@@ -141,8 +158,8 @@ other_columns_not_encoded = ['has_mobile_no','validatedon_userid','loan_transact
 df_cleaned = convert_to_categorical(df_cleaned, categorical_columns)
 df_cleaned = process_date_columns(df_cleaned, date_columns)
 df_cleaned = df_cleaned.drop(columns=other_columns_not_encoded)
-
-df_cleaned = remove_columns_with_missing_values(df_cleaned, missing_threshold=0)
+df_cleaned = impute_missing_values(df_cleaned, categorical_columns, numerical_columns)
+#df_cleaned = remove_columns_with_missing_values(df_cleaned, missing_threshold=0)
 
 highly_corr = ["total_costofloan_derived","total_repayment_derived","principal_repaid_derived"
 ]
